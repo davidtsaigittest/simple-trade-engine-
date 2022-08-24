@@ -1,6 +1,5 @@
 package com.example.orderservice.module;
 
-import com.example.orderservice.bean.LimitOrder;
 import com.example.orderservice.bean.Order;
 import com.example.orderservice.bean.Trade;
 

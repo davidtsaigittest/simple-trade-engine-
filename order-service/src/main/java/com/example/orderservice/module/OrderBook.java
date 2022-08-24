@@ -1,22 +1,28 @@
 package com.example.orderservice.module;
 
 
-import com.example.orderservice.bean.LimitOrder;
 import com.example.orderservice.bean.Order;
-import com.example.orderservice.bean.Side;
+import com.example.orderservice.bean.OrderType;
+import com.example.orderservice.bean.OrderSide;
 import com.example.orderservice.bean.Trade;
+import com.example.orderservice.service.strategy.IOrderStrategy;
+import com.example.orderservice.service.strategy.LimitOrderStrategy;
+import com.example.orderservice.service.strategy.MarketOrderStrategy;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
- *  只有一個OrderBook
- *  需要考慮multi-thread存取問題
+/**
+  設計要點:
+  1. 目前每個商品都會有一個OrderBook，目前只有一個OrderBook(context)
+  2. 不同OrderType有不同的process Strategy(可使用Strategy Pattern處理)
+  3. 需要考慮multi-thread情況下存取屬性時concurrency問題
  */
 @Component
 public class OrderBook implements IOrderBook {
+
+    private IOrderStrategy processStrategy;
 
     private LinkedList<Order> buyOrders;
 
@@ -30,110 +36,18 @@ public class OrderBook implements IOrderBook {
 
     @Override
     public synchronized List<Trade> process(Order order) {
-        if (order.getSide() == Side.BUY) {
-            return this.doBuyOrder(order);
+
+        if (order.getType() == OrderType.MARKET) {
+            processStrategy = new MarketOrderStrategy(order, buyOrders, sellOrders);
         } else {
-            return this.doSellOrder(order);
+            processStrategy = new LimitOrderStrategy(order, buyOrders, sellOrders);
         }
+        return processStrategy.process(order);
     }
 
-    private synchronized List<Trade> doBuyOrder(Order order) {
-
-        ArrayList<Trade> buyTrades = new ArrayList<>();
-
-        double buyOrderQuantity = order.getQuantity();
-
-        // 檢查SellOrderQueue是否為空
-        if (!this.sellOrders.isEmpty())
-        {
-            for (int i = 0; i < sellOrders.size(); i++)
-            {
-                Order sellOrder = sellOrders.get(i);
-
-                if (sellOrder.getPrice() == order.getPrice()) {
-
-                    double sellOrderQuantity = sellOrder.getQuantity();
-
-                    if (sellOrderQuantity >= buyOrderQuantity) {
-
-                        buyTrades.add(new Trade(order.getId(), sellOrder.getId(),
-                                order.getQuantity(), sellOrder.getPrice()));
-
-                        sellOrder.setQuantity(sellOrderQuantity - buyOrderQuantity);
-
-                    } else {
-
-                        buyOrderQuantity -= sellOrderQuantity;
-
-                        if (sellOrderQuantity == 0) {
-                            this.sellOrders.remove(i);
-                        }
-                        sellOrder.setQuantity(0);
-
-                        buyTrades.add(new Trade(order.getId(), sellOrder.getId(),
-                                sellOrderQuantity, sellOrder.getPrice()));
-                    }
-                }
-            }
-        }
-        // enqueue buy orders
-        if (buyOrderQuantity != 0) {
-            order.setQuantity(buyOrderQuantity);
-            this.buyOrders.add(order);
-        }
-
-        return buyTrades;
-    }
-
-    private synchronized List<Trade> doSellOrder(Order order) {
-
-        ArrayList<Trade> sellTrades = new ArrayList<>();
-
-        double sellOrderQuantity = order.getQuantity();
-
-        if (!this.buyOrders.isEmpty()) {
-
-            for (int i = 0; i < this.buyOrders.size(); i++) {
-
-                Order buyOrder = buyOrders.get(i);
-
-                double buyQuantity = buyOrder.getQuantity();
-
-                if (buyOrder.getPrice() == order.getPrice()) {
-
-                    if (buyQuantity >= sellOrderQuantity) {
-
-                        sellTrades.add(new Trade(buyOrder.getId(), order.getId(),
-                                sellOrderQuantity, order.getPrice()));
-
-                        buyQuantity -= sellOrderQuantity;
-
-                        if (buyQuantity == 0) {
-                            this.buyOrders.remove(i);
-                        }
-
-                    } else {
-                        sellOrderQuantity -= buyQuantity;
-                        sellTrades.add(new Trade(buyOrder.getId(), order.getId(),
-                                buyQuantity, order.getPrice()));
-                    }
-                }
-            }
-        }
-
-        // enqueue sell orders
-        if (sellOrderQuantity != 0) {
-            // update quantity
-            order.setQuantity(sellOrderQuantity);
-            this.sellOrders.add(order);
-        }
-
-        return sellTrades;
-    }
-
-    public synchronized Order findOrderById(final String id, final Side side) {
+    public synchronized Order findOrderById(final String id, final OrderSide side) {
         List<Order> search;
-        if (side == Side.BUY) {
+        if (side == OrderSide.BUY) {
             search = this.buyOrders;
         } else {
             search = this.sellOrders;
@@ -142,9 +56,6 @@ public class OrderBook implements IOrderBook {
                 .findFirst().orElse(null);
     }
 
-    private synchronized void removeBuyOrder(int index) {
-        this.buyOrders.remove(index);
-    }
 
     /**
      * @return the buyOrders
