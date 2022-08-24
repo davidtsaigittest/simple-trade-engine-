@@ -1,12 +1,11 @@
 package com.example.orderservice.controller;
 
 
-import com.example.orderservice.bean.LimitOrder;
 import com.example.orderservice.bean.Order;
-import com.example.orderservice.bean.Side;
+import com.example.orderservice.bean.OrderType;
+import com.example.orderservice.bean.OrderSide;
 import com.example.orderservice.bean.OrderRequest;
 import com.example.orderservice.service.IOrderService;
-import com.example.orderservice.service.IOrderSideService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +27,8 @@ public class OrderController {
 
     @PostMapping("/add")
     public Map<String, Object> addOrder(@RequestBody OrderRequest request) {
-        return orderService.addOrder(Side.valueOf(request.getSide()), request.getQuantity(), request.getPrice());
+        return orderService.addOrder(OrderSide.valueOf(request.getSide()), request.getQuantity(), request.getPrice(), OrderType.valueOf(request
+                .getOrderType()));
     }
 
     @GetMapping("/getall")
@@ -38,7 +38,7 @@ public class OrderController {
 
     @GetMapping("/getbyid")
     public Map<String, Order> getOrderById(@RequestBody OrderRequest request) {
-        return orderService.getOrder(request.getOrderId(), Side.valueOf(request.getSide()));
+        return orderService.getOrder(request.getOrderId(), OrderSide.valueOf(request.getSide()));
     }
 
 

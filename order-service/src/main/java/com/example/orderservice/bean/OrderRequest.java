@@ -15,4 +15,6 @@ public class OrderRequest {
 
     private String side;
 
+    private String orderType;
+
 }
