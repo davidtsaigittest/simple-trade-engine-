@@ -1,12 +1,11 @@
 package com.example.orderservice.service;
 
-import com.example.orderservice.bean.LimitOrder;
-import com.example.orderservice.bean.Side;
+import com.example.orderservice.bean.OrderType;
+import com.example.orderservice.bean.OrderSide;
 
-import java.util.List;
 import java.util.Map;
 
 public interface IOrderSideService {
-   Map<String, Object> addOrder(Side side, double quantity, double price);
+   Map<String, Object> addOrder(OrderSide side, double quantity, double price, OrderType type);
 
 }

@@ -1,5 +1,6 @@
 package com.example.orderservice;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.MockitoAnnotations;
 
@@ -16,13 +17,13 @@ public abstract class AbstractTest {
      */
     @BeforeEach
     public void setUp() {
-        // Initialise mocks created above
+        // Initialize mocks created above
         MockitoAnnotations.openMocks(this);
         this.init();
     }
 
     /**
-     * Any additional initialisation.
+     * Any additional initialization.
      */
     public abstract void init();
 
