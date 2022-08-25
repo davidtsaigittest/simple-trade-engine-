@@ -10,11 +10,6 @@ import java.util.UUID;
 @Data
 public class MarketOrder extends Order implements Comparable<MarketOrder> {
 
-
-    public MarketOrder(double quantity, double price, String id, OrderSide side, OrderType type, Date currentTime) {
-        super(quantity, price, id, side, type, currentTime);
-    }
-
     // Builder外部調用，用來建立order，不允許直接調用constructor
     public static class Builder {
 
